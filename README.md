@@ -1,21 +1,3 @@
-Semantic workspace search is not currently available
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/frontend/README.md)
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/backend/pom.xml#1-1), lines 1 to 40
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/backend/src/main/java/com/ethereal/feedback/FeedbackApplication.java)
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/frontend/package.json)
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/frontend/src/pages/Landing.jsx#1-1), lines 1 to 40
-
-Read [](file:///c%3A/Amrita/HAckathons/ethereal/backend/src/main/java/com/ethereal/feedback/controller/FeedbackController.java#1-1), lines 1 to 40
-
-Here’s a professional and informative README template for your Ethereal project, tailored for GitHub. You can copy this into a new README.md file at the root of your repository:
-
----
-
 # Ethereal
 
 A premium sanctuary for anonymous thoughts. No friction, no heavy structures. Just an atmospheric space for honest communication.
