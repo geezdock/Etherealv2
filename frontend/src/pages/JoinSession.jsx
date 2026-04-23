@@ -32,6 +32,20 @@ export default function JoinSession() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative bg-background p-4">
+      <div className="absolute left-4 top-4 z-20 flex gap-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all"
+        >
+           Back
+        </button>
+        <button
+          onClick={() => navigate('/')}
+          className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all"
+        >
+          🏠 Home
+        </button>
+      </div>
       {/* Background radial gradient */}
       <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
 

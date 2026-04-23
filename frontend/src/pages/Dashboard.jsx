@@ -14,22 +14,41 @@ export default function Dashboard() {
   const [filter, setFilter] = useState('ALL'); // ALL, TEXT, RATING
 
   useEffect(() => {
+    let isMounted = true;
     const fetchDashboard = async () => {
       try {
         const sessionRes = await axios.get(`http://localhost:8080/api/sessions/${code}`);
+        if (!isMounted) return;
         setSession(sessionRes.data);
-        
-        const responsesRes = await axios.get(`http://localhost:8080/api/sessions/${code}/responses`);
+
+        // Always get hostToken from localStorage
+        const hostToken = localStorage.getItem(`hostToken_${code}`);
+        if (!hostToken) {
+          alert('Host token missing. Only the session creator can access the dashboard.');
+          navigate('/');
+          return;
+        }
+
+        const responsesRes = await axios.get(`http://localhost:8080/api/sessions/${code}/responses`, {
+          params: { hostToken }
+        });
+        if (!isMounted) return;
         setResponses(responsesRes.data);
       } catch (err) {
+        if (err.response && err.response.status === 403) {
+          alert('Access denied. Invalid host token.');
+        }
         navigate('/');
       }
     };
     fetchDashboard();
-    
-    // Simple polling
+
+    // Polling with hostToken
     const interval = setInterval(fetchDashboard, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [code, navigate]);
 
   const handleCopy = () => {
@@ -55,6 +74,20 @@ export default function Dashboard() {
       {/* Top Navigation / Dashboard Header */}
       <div className="border-b border-white/5 bg-surface/50 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex gap-2 items-center mb-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all"
+            >
+              🏠 Home
+            </button>
+          </div>
           <div>
             <h1 className="text-2xl font-bold">{session.topic}</h1>
             <p className="text-textMuted text-sm">Hosted by {session.hostName} </p>

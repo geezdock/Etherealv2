@@ -14,6 +14,16 @@ const RATING_COLORS = [
 ];
 
 export default function Respond() {
+  // Navigation buttons
+  const Navigation = () => {
+    const navigate = useNavigate();
+    return (
+      <div className="flex gap-2 mb-6">
+        <button onClick={() => navigate(-1)} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">← Back</button>
+        <button onClick={() => navigate('/')} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">🏠 Home</button>
+      </div>
+    );
+  };
   const { code } = useParams();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
@@ -58,9 +68,9 @@ export default function Respond() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-8 flex flex-col items-center">
+    <div className="min-h-screen bg-background p-6 flex flex-col items-center">
+      <Navigation />
       <div className="w-full max-w-3xl mt-8 mb-24 space-y-10">
-        
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -85,7 +95,6 @@ export default function Respond() {
               className="glass-card p-6 sm:p-8 space-y-6"
             >
               <h3 className="text-xl font-medium tracking-wide">{q.text}</h3>
-              
               {q.type === 'TEXT' ? (
                 <textarea 
                   value={answers[q.id] || ''}
@@ -131,7 +140,6 @@ export default function Respond() {
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

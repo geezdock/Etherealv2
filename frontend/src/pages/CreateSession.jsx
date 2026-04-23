@@ -11,6 +11,14 @@ export default function CreateSession() {
   const [questions, setQuestions] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Navigation buttons
+  const Navigation = () => (
+    <div className="flex gap-2 mb-6">
+      <button onClick={() => navigate(-1)} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">← Back</button>
+      <button onClick={() => navigate('/')} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">🏠 Home</button>
+    </div>
+  );
+
   const addQuestion = (type) => {
     setQuestions([...questions, { id: Date.now(), type, text: '' }]);
   };
@@ -35,6 +43,10 @@ export default function CreateSession() {
         questions: questions.map(q => ({ text: q.text, type: q.type }))
       };
       const response = await axios.post('http://localhost:8080/api/sessions', payload);
+      // Store hostToken in localStorage for dashboard access
+      if (response.data.hostToken) {
+        localStorage.setItem(`hostToken_${response.data.code}`, response.data.hostToken);
+      }
       navigate(`/dashboard/${response.data.code}`);
     } catch (error) {
       console.error(error);
@@ -51,6 +63,7 @@ export default function CreateSession() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-2xl mt-12 mb-20"
       >
+        <Navigation />
         <div className="mb-10 text-center">
           <h2 className="text-4xl font-bold tracking-tight mb-3">Initialize Session</h2>
           <p className="text-textMuted">Design your atmospheric feedback environment.</p>

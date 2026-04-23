@@ -32,7 +32,7 @@ export default function ThankYou() {
           onClick={() => navigate('/')}
           className="relative z-10 mt-4 w-full px-4 py-3 rounded-xl bg-surface border border-white/5 hover:bg-surfaceHigh text-textMain text-sm font-medium flex items-center justify-center gap-2 transition-colors"
         >
-          <Home className="w-4 h-4" /> Return to Base
+          <Home className="w-4 h-4" /> Home
         </button>
       </motion.div>
     </div>

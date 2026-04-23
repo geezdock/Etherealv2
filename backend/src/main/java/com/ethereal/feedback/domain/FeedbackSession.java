@@ -1,9 +1,16 @@
 package com.ethereal.feedback.domain;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class FeedbackSession {
@@ -22,6 +29,9 @@ public class FeedbackSession {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(unique = true, nullable = false, length = 36)
+    private String hostToken;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -42,4 +52,7 @@ public class FeedbackSession {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public List<Question> getQuestions() { return questions; }
     public void setQuestions(List<Question> questions) { this.questions = questions; }
+
+    public String getHostToken() { return hostToken; }
+    public void setHostToken(String hostToken) { this.hostToken = hostToken; }
 }

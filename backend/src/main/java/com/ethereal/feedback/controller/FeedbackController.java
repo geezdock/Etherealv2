@@ -1,18 +1,25 @@
 package com.ethereal.feedback.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ethereal.feedback.domain.Answer;
-import com.ethereal.feedback.domain.FeedbackSession;
 import com.ethereal.feedback.domain.Question;
 import com.ethereal.feedback.domain.UserResponse;
 import com.ethereal.feedback.dto.DTOs.SubmitResponseRequest;
 import com.ethereal.feedback.repository.ResponseRepository;
 import com.ethereal.feedback.repository.SessionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/sessions/{code}/responses")
@@ -59,10 +66,17 @@ public class FeedbackController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getResponses(@PathVariable String code) {
-        return sessionRepository.findByCode(code.toUpperCase()).map(session -> {
-            List<UserResponse> responses = responseRepository.findBySession(session);
-            return ResponseEntity.ok(responses);
-        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    public ResponseEntity<List<UserResponse>> getResponses(
+            @PathVariable String code,
+            @RequestParam(value = "hostToken") String hostToken) {
+        return sessionRepository.findByCode(code.toUpperCase())
+                .map(session -> {
+                    if (!session.getHostToken().equals(hostToken)) {
+                        return new ResponseEntity<List<UserResponse>>(HttpStatus.FORBIDDEN);
+                    }
+                    List<UserResponse> responses = responseRepository.findBySession(session);
+                    return new ResponseEntity<>(responses, HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

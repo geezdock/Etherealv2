@@ -1,14 +1,24 @@
 package com.ethereal.feedback.controller;
 
+import java.security.SecureRandom;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ethereal.feedback.domain.FeedbackSession;
 import com.ethereal.feedback.domain.Question;
 import com.ethereal.feedback.dto.DTOs.CreateSessionRequest;
 import com.ethereal.feedback.repository.SessionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.security.SecureRandom;
 
 @RestController
 @RequestMapping("/api/sessions")
@@ -38,6 +48,9 @@ public class SessionController {
         session.setHostName(request.getHostName());
         session.setTopic(request.getTopic());
         session.setCode(generateCode());
+
+        // Generate a unique host token for the session creator
+        session.setHostToken(UUID.randomUUID().toString());
 
         if (request.getQuestions() != null) {
             for (var qDto : request.getQuestions()) {
