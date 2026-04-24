@@ -72,12 +72,6 @@ export default function Dashboard() {
     }
   };
 
-import Navigation from '../components/Navigation';
-
-export default function Dashboard() {
-  const { code } = useParams();
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-background pb-20">
       <AnimatePresence mode="wait">

@@ -24,8 +24,8 @@ public class RateLimitFilter implements Filter {
 
     // Create a bucket for a new IP
     private Bucket createNewBucket() {
-        // Refill 10 tokens every minute, with a burst capacity of 10
-        Bandwidth limit = Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1)));
+        // Refill 60 tokens every minute, with a burst capacity of 60
+        Bandwidth limit = Bandwidth.classic(60, Refill.intervally(60, Duration.ofMinutes(1)));
         return Bucket.builder()
                 .addLimit(limit)
                 .build();
@@ -38,8 +38,8 @@ public class RateLimitFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Apply rate limiting to API endpoints only
-        if (httpRequest.getRequestURI().startsWith("/api/")) {
+        // Apply rate limiting to API endpoints only, excluding OPTIONS requests
+        if (httpRequest.getRequestURI().startsWith("/api/") && !"OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
             String ip = httpRequest.getRemoteAddr();
             Bucket bucket = buckets.computeIfAbsent(ip, k -> createNewBucket());
 
@@ -47,6 +47,10 @@ public class RateLimitFilter implements Filter {
                 chain.doFilter(request, response);
             } else {
                 httpResponse.setStatus(429); // Too Many Requests
+                httpResponse.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+                httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                httpResponse.setHeader("Access-Control-Allow-Headers", "*");
+                httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
                 httpResponse.setContentType("application/json");
                 httpResponse.getWriter().write("{\"error\": \"Atmospheric turbulence detected. Please slow down and breathe deep.\"}");
             }

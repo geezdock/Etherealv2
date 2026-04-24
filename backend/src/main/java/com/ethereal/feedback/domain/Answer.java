@@ -19,7 +19,7 @@ public class Answer {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(name = "answer_value", nullable = false, length = 1000)
+    @Column(name = "answer_value", length = 1000)
     private String value; // Text answer or "1" to "5" for rating
 
     public Long getId() { return id; }

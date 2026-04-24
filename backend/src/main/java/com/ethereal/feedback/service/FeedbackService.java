@@ -25,8 +25,12 @@ public class FeedbackService {
 
     @Transactional
     public boolean submitResponse(String code, Map<Long, String> answers) {
+        System.out.println("DEBUG: Submitting response for session: " + code);
+        System.out.println("DEBUG: Received answers: " + answers);
+        
         return sessionRepository.findByCode(code.toUpperCase()).map(session -> {
             if (!session.isActive()) {
+                System.out.println("DEBUG: Session is NOT active");
                 return false;
             }
 
@@ -34,23 +38,36 @@ public class FeedbackService {
             userResponse.setSession(session);
 
             answers.forEach((questionId, value) -> {
+                System.out.println("DEBUG: Processing questionId: " + questionId + ", value: " + value);
                 Question question = session.getQuestions().stream()
                         .filter(q -> q.getId().equals(questionId))
                         .findFirst()
                         .orElse(null);
 
                 if (question != null) {
+                    System.out.println("DEBUG: Found question: " + question.getText());
                     Answer answer = new Answer();
                     answer.setResponse(userResponse);
                     answer.setQuestion(question);
                     answer.setValue(value);
                     userResponse.getAnswers().add(answer);
+                } else {
+                    System.out.println("DEBUG: Question NOT found for id: " + questionId);
                 }
             });
 
+            if (userResponse.getAnswers().isEmpty()) {
+                System.out.println("DEBUG: No valid answers found, not saving response");
+                return false;
+            }
+
             responseRepository.save(userResponse);
+            System.out.println("DEBUG: Response saved successfully");
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            System.out.println("DEBUG: Session not found for code: " + code);
+            return false;
+        });
     }
 
     public Optional<List<UserResponse>> getResponses(String code, String hostToken) {
