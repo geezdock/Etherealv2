@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { Send, Shield, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -39,7 +39,7 @@ export default function Respond() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/sessions/${code}`);
+        const res = await api.get(`/api/sessions/${code}`);
         if (!res.data.active) {
           navigate('/');
         } else {
@@ -60,7 +60,7 @@ export default function Respond() {
     
     setIsSubmitting(true);
     try {
-      await axios.post(`http://localhost:8080/api/sessions/${code}/responses`, { answers });
+      await api.post(`/api/sessions/${code}/responses`, { answers });
       navigate('/thank-you');
     } catch (err) {
       console.error(err);

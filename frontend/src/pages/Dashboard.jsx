@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { StopCircle, Copy, Check, BarChart2, MessageSquare, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,7 +28,7 @@ export default function Dashboard() {
     let isMounted = true;
     const fetchDashboard = async () => {
       try {
-        const sessionRes = await axios.get(`http://localhost:8080/api/sessions/${code}`);
+        const sessionRes = await api.get(`/api/sessions/${code}`);
         if (!isMounted) return;
         setSession(sessionRes.data);
 
@@ -38,7 +38,7 @@ export default function Dashboard() {
           return;
         }
 
-        const responsesRes = await axios.get(`http://localhost:8080/api/sessions/${code}/responses`, {
+        const responsesRes = await api.get(`/api/sessions/${code}/responses`, {
           params: { hostToken }
         });
         if (!isMounted) return;
@@ -66,7 +66,7 @@ export default function Dashboard() {
 
   const handleStop = async () => {
     if (window.confirm('Are you sure you want to close this session?')) {
-      await axios.put(`http://localhost:8080/api/sessions/${code}/stop`);
+      await api.put(`/api/sessions/${code}/stop`);
       setSession({...session, active: false});
     }
   };

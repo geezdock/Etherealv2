@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { Plus, X, AlignLeft, Star, ArrowRight } from 'lucide-react';
 
 export default function CreateSession() {
@@ -42,7 +42,7 @@ export default function CreateSession() {
         topic,
         questions: questions.map(q => ({ text: q.text, type: q.type }))
       };
-      const response = await axios.post('http://localhost:8080/api/sessions', payload);
+      const response = await api.post('/api/sessions', payload);
       // Store hostToken in localStorage for dashboard access
       if (response.data.hostToken) {
         localStorage.setItem(`hostToken_${response.data.code}`, response.data.hostToken);

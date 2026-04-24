@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function JoinSession() {
@@ -17,7 +17,7 @@ export default function JoinSession() {
     
     setIsLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/sessions/${code.toUpperCase()}`);
+      const response = await api.get(`/api/sessions/${code.toUpperCase()}`);
       if (!response.data.active) {
         setError('This session is closed to new responses.');
       } else {
