@@ -39,6 +39,7 @@ public class FeedbackSession {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @jakarta.persistence.OrderBy("orderIndex ASC")
     private List<Question> questions = new ArrayList<>();
 
     public Long getId() { return id; }

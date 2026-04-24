@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Plus, X, AlignLeft, Star, ArrowRight } from 'lucide-react';
+import Navigation from '../components/Navigation';
 
 export default function CreateSession() {
   const navigate = useNavigate();
@@ -10,14 +11,6 @@ export default function CreateSession() {
   const [topic, setTopic] = useState('');
   const [questions, setQuestions] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Navigation buttons
-  const Navigation = () => (
-    <div className="flex gap-2 mb-6">
-      <button onClick={() => navigate(-1)} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">← Back</button>
-      <button onClick={() => navigate('/')} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">🏠 Home</button>
-    </div>
-  );
 
   const addQuestion = (type) => {
     setQuestions([...questions, { id: Date.now(), type, text: '' }]);

@@ -21,6 +21,9 @@ public class Question {
     @Column(nullable = false)
     private String type; // "TEXT" or "RATING"
 
+    @Column(name = "order_index")
+    private int orderIndex;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public FeedbackSession getSession() { return session; }
@@ -29,4 +32,6 @@ public class Question {
     public void setText(String text) { this.text = text; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    public int getOrderIndex() { return orderIndex; }
+    public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }
 }

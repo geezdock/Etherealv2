@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Send, Shield, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
+import Navigation from '../components/Navigation';
 
 const RATING_COLORS = [
   'hover:border-red-400 hover:bg-red-400/20 data-[active=true]:border-red-400 data-[active=true]:bg-red-400/20 data-[active=true]:text-red-400',
@@ -68,13 +69,6 @@ export default function Respond() {
       setIsSubmitting(false);
     }
   };
-
-  const Navigation = () => (
-    <div className="flex gap-2 mb-6">
-      <button onClick={() => navigate(-1)} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">← Back</button>
-      <button onClick={() => navigate('/')} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">🏠 Home</button>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background p-6 flex flex-col items-center">

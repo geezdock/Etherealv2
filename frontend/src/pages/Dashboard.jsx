@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { StopCircle, Copy, Check, BarChart2, MessageSquare, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
+import Navigation from '../components/Navigation';
 
 const DashboardSkeleton = () => (
   <div className="max-w-6xl mx-auto px-4 mt-8 space-y-8 animate-pulse">
@@ -71,12 +72,11 @@ export default function Dashboard() {
     }
   };
 
-  const Navigation = () => (
-    <div className="flex gap-2 items-center mb-2">
-      <button onClick={() => navigate(-1)} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">← Back</button>
-      <button onClick={() => navigate('/')} className="px-3 py-1 rounded-lg bg-surfaceHigh text-textMuted text-xs font-medium border border-white/10 hover:bg-surface active:scale-95 transition-all">🏠 Home</button>
-    </div>
-  );
+import Navigation from '../components/Navigation';
+
+export default function Dashboard() {
+  const { code } = useParams();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -93,7 +93,7 @@ export default function Dashboard() {
             {/* Top Navigation / Dashboard Header */}
             <div className="border-b border-white/5 bg-surface/50 backdrop-blur-md sticky top-0 z-20">
               <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <Navigation />
+                <Navigation className="mb-0" />
                 <div>
                   <h1 className="text-2xl font-bold">{session.topic}</h1>
                   <p className="text-textMuted text-sm">Hosted by {session.hostName}</p>
