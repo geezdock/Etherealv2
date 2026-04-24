@@ -1,10 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, UserPlus, BarChart2 } from 'lucide-react';
+import { Sparkles, ArrowRight, UserPlus, BarChart2, Key, Hash } from 'lucide-react';
+import Modal from '../components/Modal';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false);
+  const [dashboardCode, setDashboardCode] = useState('');
+  const [hostToken, setHostToken] = useState('');
+  const [step, setStep] = useState(1); // 1: Code, 2: Token
+
+  const handleDashboardAccess = (e) => {
+    e.preventDefault();
+    const code = dashboardCode.trim().toUpperCase();
+    
+    if (step === 1) {
+      if (code.length !== 6) return;
+      const savedToken = localStorage.getItem(`hostToken_${code}`);
+      if (savedToken) {
+        navigate(`/dashboard/${code}`);
+      } else {
+        setStep(2);
+      }
+    } else {
+      if (!hostToken.trim()) return;
+      localStorage.setItem(`hostToken_${code}`, hostToken.trim());
+      navigate(`/dashboard/${code}`);
+    }
+  };
+
+  const closeDashboardModal = () => {
+    setIsDashboardModalOpen(false);
+    setDashboardCode('');
+    setHostToken('');
+    setStep(1);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
@@ -52,23 +83,7 @@ export default function Landing() {
             </button>
 
             <button
-              onClick={() => {
-                const code = window.prompt('Enter your session code to access the dashboard:');
-                if (code && code.length === 6) {
-                  const hostToken = localStorage.getItem(`hostToken_${code.toUpperCase()}`);
-                  if (!hostToken) {
-                    const inputToken = window.prompt('Enter your host token for this session:');
-                    if (inputToken && inputToken.length > 0) {
-                      localStorage.setItem(`hostToken_${code.toUpperCase()}`, inputToken);
-                      navigate(`/dashboard/${code.toUpperCase()}`);
-                    } else {
-                      alert('Host token is required for dashboard access.');
-                    }
-                  } else {
-                    navigate(`/dashboard/${code.toUpperCase()}`);
-                  }
-                }
-              }}
+              onClick={() => setIsDashboardModalOpen(true)}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-primary font-medium text-lg flex items-center justify-center gap-2 border border-primary transition-all hover:bg-primary/10 hover:scale-105 active:scale-95"
             >
               <BarChart2 className="w-5 h-5 text-primary" />
@@ -77,6 +92,50 @@ export default function Landing() {
           </div>
         </motion.div>
       </div>
+
+      <Modal 
+        isOpen={isDashboardModalOpen} 
+        onClose={closeDashboardModal}
+        title={step === 1 ? "Access Dashboard" : "Authentication Required"}
+        description={step === 1 ? "Enter your 6-character session code." : "Enter your secret host token to view results."}
+      >
+        <form onSubmit={handleDashboardAccess} className="space-y-6">
+          {step === 1 ? (
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted/50" />
+              <input
+                autoFocus
+                type="text"
+                maxLength={6}
+                value={dashboardCode}
+                onChange={(e) => setDashboardCode(e.target.value.toUpperCase())}
+                placeholder="ABC123"
+                className="w-full bg-surface border border-white/10 rounded-xl py-4 pl-12 pr-4 text-center text-2xl font-mono font-bold tracking-[0.3em] text-primary focus:outline-none focus:border-primary/50 transition-all uppercase"
+              />
+            </div>
+          ) : (
+            <div className="relative">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted/50" />
+              <input
+                autoFocus
+                type="password"
+                value={hostToken}
+                onChange={(e) => setHostToken(e.target.value)}
+                placeholder="Paste your host token..."
+                className="w-full bg-surface border border-white/10 rounded-xl py-4 pl-12 pr-4 text-textMain focus:outline-none focus:border-primary/50 transition-all"
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={step === 1 ? dashboardCode.length !== 6 : !hostToken.trim()}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-primaryContainer text-background font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+          >
+            {step === 1 ? "Continue" : "Verify & Enter"} <ArrowRight className="w-5 h-5" />
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 }

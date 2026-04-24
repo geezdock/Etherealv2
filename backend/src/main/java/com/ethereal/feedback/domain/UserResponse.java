@@ -7,6 +7,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
+@Table(name = "user_response")
 public class UserResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

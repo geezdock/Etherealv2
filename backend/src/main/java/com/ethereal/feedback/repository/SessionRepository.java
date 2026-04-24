@@ -1,10 +1,10 @@
 package com.ethereal.feedback.repository;
 
-import com.ethereal.feedback.domain.FeedbackSession;
-import com.ethereal.feedback.domain.UserResponse;
-import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
-import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.ethereal.feedback.domain.FeedbackSession;
 
 public interface SessionRepository extends JpaRepository<FeedbackSession, Long> {
     Optional<FeedbackSession> findByCode(String code);
