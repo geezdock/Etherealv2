@@ -29,10 +29,13 @@ export default function Dashboard() {
     let isMounted = true;
     const fetchDashboard = async () => {
       try {
-        // Fetch session from Supabase
+        // Fetch session with questions from Supabase
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
-          .select('*')
+          .select(`
+            *,
+            questions (*)
+          `)
           .eq('code', code.toUpperCase())
           .single();
         
@@ -158,7 +161,7 @@ export default function Dashboard() {
 
               {/* Breakdown by Question */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {session.questions.map((q) => {
+                {(session.questions || []).map((q) => {
                   if (filter !== 'ALL' && q.type !== filter) return null;
 
                   if (q.type === 'RATING') {
