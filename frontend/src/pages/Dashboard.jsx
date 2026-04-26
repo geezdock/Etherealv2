@@ -165,7 +165,7 @@ export default function Dashboard() {
                   if (filter !== 'ALL' && q.type !== filter) return null;
 
                   if (q.type === 'RATING') {
-                    const ratings = [1, 2, 3, 4, 5].map(v => responses.filter(r => r.answers.find(a => a.question.id === q.id && a.value === String(v))).length);
+                    const ratings = [1, 2, 3, 4, 5].map(v => responses.filter(r => r.answers && r.answers.find(a => a.question_id === q.id && a.value === String(v))).length);
                     const maxCount = Math.max(...ratings, 1);
                     const barColors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-lime-400', 'bg-green-400'];
 
@@ -192,7 +192,7 @@ export default function Dashboard() {
                   }
 
                   if (q.type === 'TEXT') {
-                    const textAnswers = responses.map(r => r.answers.find(a => a.question.id === q.id)?.value).filter(Boolean);
+                    const textAnswers = responses.map(r => r.answers && r.answers.find(a => a.question_id === q.id)?.value).filter(Boolean);
                     
                     return (
                       <motion.div key={q.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 lg:col-span-2">
