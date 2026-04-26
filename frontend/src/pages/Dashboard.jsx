@@ -64,6 +64,7 @@ export default function Dashboard() {
         if (!isMounted) return;
         setResponses(responsesData || []);
       } catch (err) {
+        console.error('Dashboard error:', err);
         navigate('/');
       } finally {
         if (isMounted) setIsLoading(false);
