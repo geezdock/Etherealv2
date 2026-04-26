@@ -20,6 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitFilter implements Filter {
 
+    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost:5173}")
+    private String allowedOrigins;
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     // Create a bucket for a new IP
@@ -47,7 +50,14 @@ public class RateLimitFilter implements Filter {
                 chain.doFilter(request, response);
             } else {
                 httpResponse.setStatus(429); // Too Many Requests
-                httpResponse.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+                
+                String origin = httpRequest.getHeader("Origin");
+                String responseOrigin = allowedOrigins.split(",")[0];
+                if (origin != null && java.util.Arrays.asList(allowedOrigins.split(",")).contains(origin)) {
+                    responseOrigin = origin;
+                }
+                
+                httpResponse.setHeader("Access-Control-Allow-Origin", responseOrigin);
                 httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
                 httpResponse.setHeader("Access-Control-Allow-Headers", "*");
                 httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
