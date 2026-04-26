@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+import { supabase } from '../utils/supabase';
 import { Send, Shield, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import Navigation from '../components/Navigation';
@@ -40,11 +40,25 @@ export default function Respond() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const res = await api.get(`/api/sessions/${code}`);
-        if (!res.data.active) {
+        // Fetch session with questions from Supabase
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('sessions')
+          .select(`
+            *,
+            questions (*)
+          `)
+          .eq('code', code.toUpperCase())
+          .single();
+        
+        if (sessionError || !sessionData) {
+          navigate('/');
+          return;
+        }
+        
+        if (!sessionData.active) {
           navigate('/');
         } else {
-          setSession(res.data);
+          setSession(sessionData);
         }
       } catch (err) {
         navigate('/');
@@ -61,7 +75,35 @@ export default function Respond() {
     
     setIsSubmitting(true);
     try {
-      await api.post(`/api/sessions/${code}/responses`, { answers });
+      // Get session ID from the session data
+      const { data: sessionData } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('code', code.toUpperCase())
+        .single();
+      
+      // Create response
+      const { data: responseData, error: responseError } = await supabase
+        .from('responses')
+        .insert({ session_id: sessionData.id })
+        .select()
+        .single();
+      
+      if (responseError) throw responseError;
+      
+      // Create answers
+      const answersData = Object.entries(answers).map(([questionId, value]) => ({
+        response_id: responseData.id,
+        question_id: parseInt(questionId),
+        value: value
+      }));
+      
+      const { error: answersError } = await supabase
+        .from('answers')
+        .insert(answersData);
+      
+      if (answersError) throw answersError;
+      
       navigate('/thank-you');
     } catch (err) {
       console.error(err);

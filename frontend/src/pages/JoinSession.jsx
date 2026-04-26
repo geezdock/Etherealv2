@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+import { supabase } from '../utils/supabase';
 import { ArrowRight, AlertCircle } from 'lucide-react';
 
 import Navigation from '../components/Navigation';
@@ -19,11 +19,21 @@ export default function JoinSession() {
     
     setIsLoading(true);
     try {
-      const response = await api.get(`/api/sessions/${code.toUpperCase()}`);
-      if (!response.data.active) {
+      const { data: sessionData, error } = await supabase
+        .from('sessions')
+        .select('code, active')
+        .eq('code', code.toUpperCase())
+        .single();
+      
+      if (error || !sessionData) {
+        setError('Session not found. Please verify your code.');
+        return;
+      }
+      
+      if (!sessionData.active) {
         setError('This session is closed to new responses.');
       } else {
-        navigate(`/respond/${response.data.code}`);
+        navigate(`/respond/${sessionData.code}`);
       }
     } catch (err) {
       setError('Session not found. Please verify your code.');

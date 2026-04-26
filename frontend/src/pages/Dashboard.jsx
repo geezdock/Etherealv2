@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+import { supabase } from '../utils/supabase';
 import { StopCircle, Copy, Check, BarChart2, MessageSquare, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import Navigation from '../components/Navigation';
@@ -29,21 +29,40 @@ export default function Dashboard() {
     let isMounted = true;
     const fetchDashboard = async () => {
       try {
-        const sessionRes = await api.get(`/api/sessions/${code}`);
+        // Fetch session from Supabase
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('code', code.toUpperCase())
+          .single();
+        
+        if (sessionError || !sessionData) {
+          navigate('/');
+          return;
+        }
+        
         if (!isMounted) return;
-        setSession(sessionRes.data);
+        setSession(sessionData);
 
         const hostToken = localStorage.getItem(`hostToken_${code}`);
-        if (!hostToken) {
+        if (!hostToken || hostToken !== sessionData.host_token) {
           navigate('/');
           return;
         }
 
-        const responsesRes = await api.get(`/api/sessions/${code}/responses`, {
-          params: { hostToken }
-        });
+        // Fetch responses with answers
+        const { data: responsesData, error: responsesError } = await supabase
+          .from('responses')
+          .select(`
+            *,
+            answers (*)
+          `)
+          .eq('session_id', sessionData.id);
+        
+        if (responsesError) throw responsesError;
+        
         if (!isMounted) return;
-        setResponses(responsesRes.data);
+        setResponses(responsesData || []);
       } catch (err) {
         navigate('/');
       } finally {
@@ -67,7 +86,12 @@ export default function Dashboard() {
 
   const handleStop = async () => {
     if (window.confirm('Are you sure you want to close this session?')) {
-      await api.put(`/api/sessions/${code}/stop`);
+      const { error } = await supabase
+        .from('sessions')
+        .update({ active: false })
+        .eq('code', code.toUpperCase());
+      
+      if (error) throw error;
       setSession({...session, active: false});
     }
   };

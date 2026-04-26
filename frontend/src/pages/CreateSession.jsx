@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+import { supabase } from '../utils/supabase';
 import { Plus, X, AlignLeft, Star, ArrowRight } from 'lucide-react';
 import Navigation from '../components/Navigation';
 
@@ -30,17 +30,44 @@ export default function CreateSession() {
     
     setIsSubmitting(true);
     try {
-      const payload = {
-        hostName,
-        topic,
-        questions: questions.map(q => ({ text: q.text, type: q.type }))
-      };
-      const response = await api.post('/api/sessions', payload);
-      // Store hostToken in localStorage for dashboard access
-      if (response.data.hostToken) {
-        localStorage.setItem(`hostToken_${response.data.code}`, response.data.hostToken);
+      // Generate unique code and host token
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const hostToken = crypto.randomUUID();
+      
+      // Create session in Supabase
+      const { data: session, error } = await supabase
+        .from('sessions')
+        .insert({
+          code,
+          host_name: hostName,
+          topic,
+          host_token: hostToken,
+          active: true
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Insert questions if any
+      if (questions.length > 0) {
+        const questionsData = questions.map((q, index) => ({
+          session_id: session.id,
+          text: q.text,
+          type: q.type,
+          order_index: index
+        }));
+        
+        const { error: questionsError } = await supabase
+          .from('questions')
+          .insert(questionsData);
+        
+        if (questionsError) throw questionsError;
       }
-      navigate(`/dashboard/${response.data.code}`);
+      
+      // Store hostToken in localStorage for dashboard access
+      localStorage.setItem(`hostToken_${code}`, hostToken);
+      navigate(`/dashboard/${code}`);
     } catch (error) {
       console.error(error);
     } finally {
