@@ -15,26 +15,43 @@ export default function JoinSession() {
   const handleJoin = async (e) => {
     e.preventDefault();
     setError('');
-    if (code.length !== 6) return;
+    
+    const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    if (cleanCode.length !== 6) {
+      setError('Please enter a valid 6-character code');
+      return;
+    }
     
     setIsLoading(true);
     try {
       const { data: sessionData, error } = await supabase
         .from('sessions')
-        .select('code, active')
-        .eq('code', code.toUpperCase())
-        .single();
+        .select('code, active, expires_at, host_name, topic')
+        .eq('code', cleanCode)
+        .maybeSingle();
       
-      if (error || !sessionData) {
+      if (error) {
+        setError('Session not found. Please verify your code.');
+        return;
+      }
+      
+      if (!sessionData) {
         setError('Session not found. Please verify your code.');
         return;
       }
       
       if (!sessionData.active) {
         setError('This session is closed to new responses.');
-      } else {
-        navigate(`/respond/${sessionData.code}`);
+        return;
       }
+      
+      if (sessionData.expires_at && new Date(sessionData.expires_at) < new Date()) {
+        setError('This session has expired.');
+        return;
+      }
+      
+      navigate(`/respond/${sessionData.code}`);
     } catch (err) {
       setError('Session not found. Please verify your code.');
     } finally {
@@ -68,7 +85,7 @@ export default function JoinSession() {
                 type="text"
                 maxLength={6}
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
                 placeholder="XXXXXX"
                 className="w-full bg-surface border border-white/5 rounded-xl px-6 py-5 text-center text-3xl tracking-[0.5em] font-medium text-textMain placeholder:text-textMuted/30 focus:outline-none focus:border-primary/50 transition-colors uppercase"
               />

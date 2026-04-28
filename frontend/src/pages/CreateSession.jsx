@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Plus, X, AlignLeft, Star, ArrowRight } from 'lucide-react';
+import { Plus, X, AlignLeft, Star, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Navigation from '../components/Navigation';
 
 export default function CreateSession() {
@@ -11,6 +11,7 @@ export default function CreateSession() {
   const [topic, setTopic] = useState('');
   const [questions, setQuestions] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const addQuestion = (type) => {
     setQuestions([...questions, { id: Date.now(), type, text: '' }]);
@@ -26,34 +27,53 @@ export default function CreateSession() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!hostName || !topic) return;
+    
+    const trimmedHostName = hostName.trim();
+    const trimmedTopic = topic.trim();
+    
+    if (!trimmedHostName || !trimmedTopic) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    
+    if (trimmedHostName.length > 100) {
+      setError('Host name must be less than 100 characters');
+      return;
+    }
+    
+    if (trimmedTopic.length > 255) {
+      setError('Topic must be less than 255 characters');
+      return;
+    }
+
+    const validQuestions = questions.filter(q => q.text.trim());
+    for (const q of validQuestions) {
+      if (q.text.length > 1000) {
+        setError('Questions must be less than 1000 characters');
+        return;
+      }
+    }
     
     setIsSubmitting(true);
+    setError(null);
+    
     try {
-      // Generate unique code and host token
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const hostToken = crypto.randomUUID();
-      
-      // Create session in Supabase
-      const { data: session, error } = await supabase
+      const { data: session, error: sessionError } = await supabase
         .from('sessions')
         .insert({
-          code,
-          host_name: hostName,
-          topic,
-          host_token: hostToken,
+          host_name: trimmedHostName,
+          topic: trimmedTopic,
           active: true
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (sessionError) throw sessionError;
       
-      // Insert questions if any
-      if (questions.length > 0) {
-        const questionsData = questions.map((q, index) => ({
+      if (validQuestions.length > 0) {
+        const questionsData = validQuestions.map((q, index) => ({
           session_id: session.id,
-          text: q.text,
+          text: q.text.trim(),
           type: q.type,
           order_index: index
         }));
@@ -65,11 +85,11 @@ export default function CreateSession() {
         if (questionsError) throw questionsError;
       }
       
-      // Store hostToken in localStorage for dashboard access
-      localStorage.setItem(`hostToken_${code}`, hostToken);
-      navigate(`/dashboard/${code}`);
-    } catch (error) {
-      console.error(error);
+      localStorage.setItem(`hostToken_${session.code}`, session.host_token);
+      navigate(`/dashboard/${session.code}`);
+    } catch (err) {
+      console.error('Create session error:', err);
+      setError(err.message || 'Failed to create session. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,6 +110,17 @@ export default function CreateSession() {
         </div>
 
         <form onSubmit={handleSubmit} className="glass-card p-8 sm:p-10 flex flex-col gap-8">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-tertiary/10 border border-tertiary/30 rounded-xl flex items-center gap-3 text-tertiary"
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </motion.div>
+          )}
+          
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold tracking-wider text-primary uppercase">Host Identity</label>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Send, Shield, AlertCircle } from 'lucide-react';
+import { Send, Shield, AlertCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import Navigation from '../components/Navigation';
 
@@ -36,34 +36,44 @@ export default function Respond() {
   const [answers, setAnswers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        // Fetch session with questions from Supabase
+        setError(null);
+        const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
-          .select(`
-            *,
-            questions (*)
-          `)
-          .eq('code', code.toUpperCase())
+          .select(`*, questions (id, text, type, order_index)`)
+          .eq('code', cleanCode)
           .single();
         
         if (sessionError || !sessionData) {
-          navigate('/');
+          setError('Session not found');
+          setIsLoading(false);
           return;
         }
         
         if (!sessionData.active) {
-          navigate('/');
-        } else {
-          setSession(sessionData);
+          setError('This session is no longer accepting responses');
+          setIsLoading(false);
+          return;
         }
+        
+        if (sessionData.expires_at && new Date(sessionData.expires_at) < new Date()) {
+          setError('This session has expired');
+          setIsLoading(false);
+          return;
+        }
+        
+        setSession(sessionData);
+        setIsLoading(false);
       } catch (err) {
-        navigate('/');
-      } finally {
-        setTimeout(() => setIsLoading(false), 800); // Slight delay for smooth transition
+        console.error('Fetch session error:', err);
+        setError('Failed to load session');
+        setIsLoading(false);
       }
     };
     fetchSession();
@@ -71,21 +81,20 @@ export default function Respond() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (Object.keys(answers).length !== session.questions.length || session.questions.length === 0) return;
+    
+    if (session.questions.length === 0) return;
+    
+    const unansweredQuestions = session.questions.filter(q => !answers[q.id]);
+    if (unansweredQuestions.length > 0) {
+      alert('Please answer all questions before submitting');
+      return;
+    }
     
     setIsSubmitting(true);
     try {
-      // Get session ID from the session data
-      const { data: sessionData } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('code', code.toUpperCase())
-        .single();
-      
-      // Create response
       const { data: responseData, error: responseError } = await supabase
         .from('responses')
-        .insert({ session_id: sessionData.id })
+        .insert({ session_id: session.id })
         .select()
         .single();
       
@@ -116,6 +125,25 @@ export default function Respond() {
     <div className="min-h-screen bg-background p-6 flex flex-col items-center">
       <Navigation />
       
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-8 text-center max-w-md mt-12"
+        >
+          <AlertCircle className="w-12 h-12 text-tertiary mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Unable to Join</h2>
+          <p className="text-textMuted mb-4">{error}</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="text-primary hover:underline font-medium"
+          >
+            Return to Home
+          </button>
+        </motion.div>
+      )}
+      
+      {!error && (
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div 
@@ -212,6 +240,7 @@ export default function Respond() {
           </motion.div>
         )}
       </AnimatePresence>
+      )}
     </div>
   );
 }

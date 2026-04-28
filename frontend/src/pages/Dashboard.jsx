@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { StopCircle, Copy, Check, BarChart2, MessageSquare, Loader2 } from 'lucide-react';
+import { StopCircle, Copy, Check, BarChart2, MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import Navigation from '../components/Navigation';
 
@@ -22,65 +22,99 @@ export default function Dashboard() {
   const [session, setSession] = useState(null);
   const [responses, setResponses] = useState([]);
   const [copied, setCopied] = useState(false);
-  const [filter, setFilter] = useState('ALL'); // ALL, TEXT, RATING
+  const [filter, setFilter] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchResponses = useCallback(async (sessionId) => {
+    const { data, error: responsesError } = await supabase
+      .from('responses')
+      .select(`*, answers (*)`)
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false });
+
+    if (responsesError) throw responsesError;
+    return data || [];
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
+
     const fetchDashboard = async () => {
       try {
-        // Fetch session with questions from Supabase
+        setError(null);
+        
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
-          .select(`
-            *,
-            questions (*)
-          `)
+          .select(`*, questions (id, text, type, order_index)`)
           .eq('code', code.toUpperCase())
           .single();
-        
+
         if (sessionError || !sessionData) {
-          navigate('/');
+          if (isMounted) {
+            setError('Session not found');
+            setTimeout(() => navigate('/'), 2000);
+          }
           return;
         }
-        
+
         if (!isMounted) return;
         setSession(sessionData);
 
         const hostToken = localStorage.getItem(`hostToken_${code}`);
         if (!hostToken || hostToken !== sessionData.host_token) {
-          navigate('/');
+          if (isMounted) {
+            setError('Unauthorized access');
+            setTimeout(() => navigate('/'), 2000);
+          }
           return;
         }
 
-        // Fetch responses with answers
-        const { data: responsesData, error: responsesError } = await supabase
-          .from('responses')
-          .select(`
-            *,
-            answers (*)
-          `)
-          .eq('session_id', sessionData.id);
-        
-        if (responsesError) throw responsesError;
-        
-        if (!isMounted) return;
-        setResponses(responsesData || []);
+        const responsesData = await fetchResponses(sessionData.id);
+        if (isMounted) {
+          setResponses(responsesData);
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error('Dashboard error:', err);
-        navigate('/');
-      } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setError('Failed to load dashboard');
+          setIsLoading(false);
+        }
       }
     };
+
     fetchDashboard();
 
-    const interval = setInterval(fetchDashboard, 5000);
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
-  }, [code, navigate]);
+  }, [code, navigate, fetchResponses]);
+
+  useEffect(() => {
+    if (!session?.id) return;
+
+    const responsesChannel = supabase
+      .channel('responses-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'responses',
+          filter: `session_id=eq.${session.id}`,
+        },
+        async () => {
+          const updatedResponses = await fetchResponses(session.id);
+          setResponses(updatedResponses);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(responsesChannel);
+    };
+  }, [session?.id, fetchResponses]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -99,6 +133,22 @@ export default function Dashboard() {
       setSession({...session, active: false});
     }
   };
+
+  if (error && !session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card p-8 text-center max-w-md"
+        >
+          <AlertCircle className="w-12 h-12 text-tertiary mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error</h2>
+          <p className="text-textMuted">{error}</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -121,11 +171,12 @@ export default function Dashboard() {
                   <p className="text-textMuted text-sm">Hosted by {session.hostName}</p>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-surfaceHigh px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-textMuted uppercase tracking-wider">Access Code:</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 bg-surfaceHigh px-3 sm:px-4 py-2 rounded-lg border border-white/5">
+                    <span className="text-xs text-textMuted uppercase tracking-wider hidden sm:inline">Access Code:</span>
+                    <span className="text-xs text-textMuted uppercase sm:hidden">Code:</span>
                     <span className="font-mono font-bold tracking-[0.2em]">{code}</span>
-                    <button onClick={handleCopy} className="ml-2 text-primary hover:text-primaryContainer transition-colors">
+                    <button onClick={handleCopy} className="text-primary hover:text-primaryContainer transition-colors">
                       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
