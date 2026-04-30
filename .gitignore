@@ -20,6 +20,9 @@ dist/
 .env
 .env.local
 .env.*.local
+# Keep example and production env files
+!.env.example
+!.env.production
 
 # IDEs
 .vscode/

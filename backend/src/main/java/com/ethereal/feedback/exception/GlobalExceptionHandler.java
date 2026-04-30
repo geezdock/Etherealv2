@@ -31,4 +31,13 @@ public class GlobalExceptionHandler {
         
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(AlreadySubmittedException.class)
+    public ResponseEntity<Map<String, String>> handleAlreadySubmitted(AlreadySubmittedException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Already submitted");
+        response.put("message", "You have already submitted feedback for this session.");
+        
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
 }

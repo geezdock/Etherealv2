@@ -3,6 +3,8 @@ package com.ethereal.feedback.controller;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -32,9 +34,12 @@ public class FeedbackController {
     @PostMapping
     public ResponseEntity<Void> submitResponse(
             @PathVariable String code,
-            @RequestBody SubmitResponseRequest request) {
+            @RequestBody SubmitResponseRequest request,
+            HttpServletRequest httpRequest) {
 
-        if (feedbackService.submitResponse(code, request.getAnswers())) {
+        String submitterIp = httpRequest.getRemoteAddr();
+
+        if (feedbackService.submitResponse(code, request.getAnswers(), submitterIp)) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

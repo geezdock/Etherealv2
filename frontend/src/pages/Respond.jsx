@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabase';
 import { Send, Shield, AlertCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import Navigation from '../components/Navigation';
+
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const RATING_COLORS = [
   'hover:border-red-400 hover:bg-red-400/20 data-[active=true]:border-red-400 data-[active=true]:bg-red-400/20 data-[active=true]:text-red-400',
@@ -44,26 +45,22 @@ export default function Respond() {
         setError(null);
         const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
         
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('sessions')
-          .select(`*, questions (id, text, type, order_index)`)
-          .eq('code', cleanCode)
-          .single();
+        const response = await fetch(`${API_URL}/api/sessions/${cleanCode}`);
         
-        if (sessionError || !sessionData) {
-          setError('Session not found');
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Session not found');
+          } else {
+            setError('Failed to load session');
+          }
           setIsLoading(false);
           return;
         }
+        
+        const sessionData = await response.json();
         
         if (!sessionData.active) {
           setError('This session is no longer accepting responses');
-          setIsLoading(false);
-          return;
-        }
-        
-        if (sessionData.expires_at && new Date(sessionData.expires_at) < new Date()) {
-          setError('This session has expired');
           setIsLoading(false);
           return;
         }
@@ -92,31 +89,35 @@ export default function Respond() {
     
     setIsSubmitting(true);
     try {
-      const { data: responseData, error: responseError } = await supabase
-        .from('responses')
-        .insert({ session_id: session.id })
-        .select()
-        .single();
+      // Format answers as map of questionId -> value for backend
+      const formattedAnswers = {};
+      Object.entries(answers).forEach(([questionId, value]) => {
+        formattedAnswers[questionId] = value;
+      });
       
-      if (responseError) throw responseError;
+      const response = await fetch(`${API_URL}/api/sessions/${session.code}/responses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answers: formattedAnswers }),
+      });
       
-      // Create answers
-      const answersData = Object.entries(answers).map(([questionId, value]) => ({
-        response_id: responseData.id,
-        question_id: parseInt(questionId),
-        value: value
-      }));
+      if (response.status === 409) {
+        const errorData = await response.json();
+        setError(errorData.message || 'You have already submitted feedback for this session.');
+        setIsSubmitting(false);
+        return;
+      }
       
-      const { error: answersError } = await supabase
-        .from('answers')
-        .insert(answersData);
-      
-      if (answersError) throw answersError;
+      if (!response.ok) {
+        throw new Error('Failed to submit response');
+      }
       
       navigate('/thank-you');
     } catch (err) {
       console.error(err);
-    } finally {
+      setError('Failed to submit feedback. Please try again.');
       setIsSubmitting(false);
     }
   };

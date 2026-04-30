@@ -3,6 +3,7 @@ package com.ethereal.feedback.service;
 import com.ethereal.feedback.domain.Answer;
 import com.ethereal.feedback.domain.Question;
 import com.ethereal.feedback.domain.UserResponse;
+import com.ethereal.feedback.exception.AlreadySubmittedException;
 import com.ethereal.feedback.repository.ResponseRepository;
 import com.ethereal.feedback.repository.SessionRepository;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class FeedbackService {
     }
 
     @Transactional
-    public boolean submitResponse(String code, Map<Long, String> answers) {
+    public boolean submitResponse(String code, Map<Long, String> answers, String submitterIp) {
         System.out.println("DEBUG: Submitting response for session: " + code);
         System.out.println("DEBUG: Received answers: " + answers);
         
@@ -34,8 +35,14 @@ public class FeedbackService {
                 return false;
             }
 
+            if (responseRepository.findBySessionAndSubmitterIp(session, submitterIp).isPresent()) {
+                System.out.println("DEBUG: User already submitted from IP: " + submitterIp);
+                throw new AlreadySubmittedException("Duplicate submission");
+            }
+
             UserResponse userResponse = new UserResponse();
             userResponse.setSession(session);
+            userResponse.setSubmitterIp(submitterIp);
 
             answers.forEach((questionId, value) -> {
                 System.out.println("DEBUG: Processing questionId: " + questionId + ", value: " + value);

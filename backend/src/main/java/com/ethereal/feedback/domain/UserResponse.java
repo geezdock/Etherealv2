@@ -20,6 +20,8 @@ public class UserResponse {
 
     private LocalDateTime submittedAt = LocalDateTime.now();
 
+    private String submitterIp;
+
     @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Answer> answers = new ArrayList<>();
 
@@ -29,6 +31,8 @@ public class UserResponse {
     public void setSession(FeedbackSession session) { this.session = session; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+    public String getSubmitterIp() { return submitterIp; }
+    public void setSubmitterIp(String submitterIp) { this.submitterIp = submitterIp; }
     public List<Answer> getAnswers() { return answers; }
     public void setAnswers(List<Answer> answers) { this.answers = answers; }
 }
